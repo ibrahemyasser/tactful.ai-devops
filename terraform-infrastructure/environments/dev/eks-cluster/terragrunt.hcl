@@ -24,6 +24,16 @@ dependency "vpc" {
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
 
+dependency "secrets" {
+  config_path = "../secrets-manager"
+  
+  mock_outputs = {
+    external_secrets_role_arn = "arn:aws:iam::123456789012:role/mock-external-secrets-role"
+  }
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  skip_outputs = true  # Optional dependency - secrets module may not exist yet
+}
+
 # Input variables
 inputs = {
   cluster_name    = "tactful-voting-dev"
@@ -56,4 +66,8 @@ inputs = {
       }
     }
   }
+  
+  # External Secrets Operator Pod Identity (from secrets-manager module)
+  # This will be empty on first apply, run secrets-manager first, then re-apply EKS
+  external_secrets_role_arn = try(dependency.secrets.outputs.external_secrets_role_arn, "")
 }

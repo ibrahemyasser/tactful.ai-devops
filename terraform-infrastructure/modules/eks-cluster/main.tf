@@ -366,3 +366,23 @@ resource "aws_eks_addon" "ebs_csi_driver" {
     aws_eks_pod_identity_association.ebs_csi_driver
   ]
 }
+
+# Pod Identity Association for External Secrets Operator
+# This is created here but the IAM role is managed by the secrets-manager module
+resource "aws_eks_pod_identity_association" "external_secrets" {
+  count = var.external_secrets_role_arn != "" ? 1 : 0
+
+  cluster_name    = aws_eks_cluster.main.name
+  namespace       = "external-secrets-system"
+  service_account = "external-secrets"
+  role_arn        = var.external_secrets_role_arn
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.cluster_name}-external-secrets-pod-identity"
+    }
+  )
+
+  depends_on = [aws_eks_cluster.main]
+}

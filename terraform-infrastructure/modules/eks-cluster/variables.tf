@@ -106,6 +106,12 @@ variable "ebs_csi_version" {
   default     = ""
 }
 
+variable "external_secrets_role_arn" {
+  description = "IAM role ARN for External Secrets Operator (empty to skip Pod Identity association)"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)
