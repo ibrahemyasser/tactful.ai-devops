@@ -1,0 +1,37 @@
+# Result Service Network Policy
+# Allow ingress from ALB, egress to PostgreSQL
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: result-network-policy
+  namespace: voting
+spec:
+  podSelector:
+    matchLabels:
+      app: result
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from ALB/Ingress
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 8081
+  egress:
+  # Allow to PostgreSQL
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53

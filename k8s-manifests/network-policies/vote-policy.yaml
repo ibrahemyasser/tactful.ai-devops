@@ -1,0 +1,37 @@
+# Vote Service Network Policy
+# Allow ingress from ALB, egress to Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vote-network-policy
+  namespace: voting
+spec:
+  podSelector:
+    matchLabels:
+      app: vote
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow from ALB/Ingress (all sources for now, can be restricted)
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 80
+  egress:
+  # Allow to Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53

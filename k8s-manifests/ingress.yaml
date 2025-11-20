@@ -1,0 +1,45 @@
+# Unified ALB Ingress for Vote and Result services
+# Path-based routing: /vote -> vote service, /result -> result service
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: voting-app-ingress
+  namespace: voting
+  annotations:
+    # ALB configuration
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+    
+    # Health check configuration
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+    
+    # Tags for cost tracking
+    alb.ingress.kubernetes.io/tags: Environment=dev,Application=voting-app,ManagedBy=kubernetes
+spec:
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      # Vote service - accessible at /vote
+      - path: /vote
+        pathType: Prefix
+        backend:
+          service:
+            name: vote
+            port:
+              number: 80
+      
+      # Result service - accessible at /result  
+      - path: /result
+        pathType: Prefix
+        backend:
+          service:
+            name: result
+            port:
+              number: 80

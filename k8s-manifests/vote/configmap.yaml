@@ -1,0 +1,11 @@
+# Vote Service Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vote-config
+  namespace: voting
+data:
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  OPTION_A: "Cats"
+  OPTION_B: "Dogs"

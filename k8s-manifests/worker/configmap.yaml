@@ -1,0 +1,11 @@
+# Worker Service Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config
+  namespace: voting
+data:
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
