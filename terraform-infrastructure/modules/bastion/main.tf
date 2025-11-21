@@ -1,4 +1,4 @@
-# Data source for latest Amazon Linux 2023 AMI
+# Data source for latest Amazon Linux 2023 AMI 
 data "aws_ami" "amazon_linux_2023" {
   most_recent = true
   owners      = ["amazon"]
