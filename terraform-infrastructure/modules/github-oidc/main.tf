@@ -21,6 +21,10 @@ resource "aws_iam_openid_connect_provider" "github" {
     Environment = var.environment
     ManagedBy   = "Terraform"
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # IAM Role for GitHub Actions
@@ -52,6 +56,10 @@ resource "aws_iam_role" "github_actions" {
     Name        = "GitHub Actions Deploy Role"
     Environment = var.environment
     ManagedBy   = "Terraform"
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
