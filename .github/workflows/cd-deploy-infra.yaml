@@ -45,6 +45,7 @@ jobs:
     name: Plan - Dev
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
+    environment: dev
     
     steps:
       - uses: actions/checkout@v4
