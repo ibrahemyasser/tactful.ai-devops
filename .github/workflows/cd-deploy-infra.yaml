@@ -1,0 +1,119 @@
+name: CD - Deploy Infrastructure (Terraform)
+
+on:
+  # Automatic trigger on infrastructure changes
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform-infrastructure/**'
+  
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      action:
+        description: 'Action'
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+      component:
+        description: 'Component'
+        required: true
+        type: choice
+        options:
+          - all
+          - github-oidc
+          - vpc
+          - secrets-manager
+          - eks-cluster
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform-plan:
+    name: Plan - Dev
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        run: |
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v0.55.1/terragrunt_linux_amd64
+          sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt && chmod +x /usr/local/bin/terragrunt
+
+      - name: Terraform Plan
+        working-directory: terraform-infrastructure/environments/dev
+        run: |
+          terragrunt run --all plan  2>&1 | tee plan.txt
+          
+          if grep -q "No changes" plan.txt; then
+            echo "✅ No changes" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Changes detected - run workflow manually to apply" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  terraform-deploy:
+    name: ${{ inputs.action }} - ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    environment: ${{ inputs.environment }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        run: |
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v0.55.1/terragrunt_linux_amd64
+          sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt && chmod +x /usr/local/bin/terragrunt
+
+      - name: Run Terraform
+        working-directory: terraform-infrastructure/environments/${{ inputs.environment }}
+        run: |
+          if [ "${{ inputs.component }}" = "all" ]; then
+            terragrunt run --all ${{ inputs.action }} 
+          else
+            cd ${{ inputs.component }}
+            terragrunt ${{ inputs.action }}
+          fi
+
+      - name: Next Steps
+        if: inputs.action == 'apply' && inputs.component == 'all'
+        run: |
+          echo "### ✅ Infrastructure deployed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next:** setup the cluster then deploy app" >> $GITHUB_STEP_SUMMARY
