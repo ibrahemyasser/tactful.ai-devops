@@ -8,7 +8,7 @@ resource "random_password" "postgresql_password" {
   # Avoid characters that might cause issues in connection strings
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
-#test trigger build infra
+#test trigger build infra 
 # PostgreSQL credentials secret
 # Using path-based naming to match Helm chart references: voting/{env}/postgresql
 resource "aws_secretsmanager_secret" "postgresql" {
