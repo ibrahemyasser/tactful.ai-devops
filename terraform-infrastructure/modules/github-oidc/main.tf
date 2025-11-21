@@ -99,7 +99,8 @@ resource "aws_iam_role_policy" "iam_permissions" {
           "iam:CreatePolicyVersion",
           "iam:DeletePolicyVersion",
           "iam:TagPolicy",
-          "iam:UntagPolicy"
+          "iam:UntagPolicy",
+          "iam:GetOpenIDConnectProvider"
         ]
         Resource = "*"
       }
