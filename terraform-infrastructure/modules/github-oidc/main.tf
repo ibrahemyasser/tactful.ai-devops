@@ -1,6 +1,6 @@
 # GitHub OIDC Provider for AWS
 # This allows GitHub Actions to authenticate to AWS without long-term credentials
-# trigger build infra
+# trigger build infraa
 data "tls_certificate" "github" {
   url = "https://token.actions.githubusercontent.com"
 }
