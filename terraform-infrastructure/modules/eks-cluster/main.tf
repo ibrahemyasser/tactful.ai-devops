@@ -398,7 +398,7 @@ resource "aws_eks_access_entry" "local_admin" {
 resource "aws_eks_access_policy_association" "local_admin_policy" {
   cluster_name  = aws_eks_cluster.main.name
   principal_arn = "arn:aws:iam::608713827966:user/Terraform"
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
     type = "cluster"
