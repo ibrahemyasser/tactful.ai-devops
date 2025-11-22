@@ -1,0 +1,23 @@
+{{- if .Values.result.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: result-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    {{- range $key, $value := .Values.result.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.result.ingress.className }}
+  rules:
+  - http:
+      paths:
+      - path: {{ .Values.result.ingress.path }}
+        pathType: {{ .Values.result.ingress.pathType }}
+        backend:
+          service:
+            name: result
+            port:
+              number: {{ .Values.result.service.port }}
+{{- end }}

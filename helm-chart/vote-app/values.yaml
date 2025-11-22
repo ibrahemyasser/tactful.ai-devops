@@ -7,33 +7,6 @@ global:
   imageRegistry: ibrahim1025
   imagePullPolicy: IfNotPresent
 
-# Shared Ingress for both vote and result services
-ingress:
-  enabled: true
-  className: alb
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
-    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
-    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
-    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
-  # Path-based routing
-  paths:
-    vote:
-      path: /vote
-      pathType: Prefix
-      serviceName: vote
-      servicePort: 80
-      healthCheckPath: /
-    result:
-      path: /result
-      pathType: Prefix
-      serviceName: result
-      servicePort: 8081
-      healthCheckPath: /
 
 # Vote service configuration
 vote:
@@ -94,6 +67,19 @@ vote:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
+  
+  ingress:
+    enabled: true
+    className: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+      alb.ingress.kubernetes.io/healthcheck-path: /
+      alb.ingress.kubernetes.io/tags: Service=vote,App=voting
+    host: ""
+    path: /
+    pathType: Prefix
 
 # Result service configuration
 result:
@@ -153,6 +139,19 @@ result:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
+  
+  ingress:
+    enabled: true
+    className: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+      alb.ingress.kubernetes.io/healthcheck-path: /
+      alb.ingress.kubernetes.io/tags: Service=result,App=voting
+    host: ""
+    path: /
+    pathType: Prefix
 
 # Worker service configuration
 worker:
