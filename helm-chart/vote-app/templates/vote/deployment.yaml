@@ -1,0 +1,57 @@
+{{- if .Values.vote.enabled}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: vote
+    {{ include "vote-app.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.vote.replicaCount }}
+  selector:
+    matchLabels:
+      app: vote
+  template:
+    metadata:
+      labels:
+        app: vote
+        {{ include "vote-app.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "vote-app.serviceAccountName" . }}
+      securityContext:
+        runAsNonRoot: {{ .Values.vote.securityContext.runAsNonRoot }}
+        runAsUser: {{ .Values.vote.securityContext.runAsUser }}
+        fsGroup: {{ .Values.vote.securityContext.fsGroup }}
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: vote
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.vote.image.repository }}:{{ .Values.vote.image.tag }}"
+        imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+        ports:
+        - containerPort: {{ .Values.vote.service.targetPort }}
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: vote-config
+        resources:
+          {{- toYaml .Values.vote.resources | nindent 10 }}
+        livenessProbe:
+          {{- toYaml .Values.vote.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.vote.readinessProbe | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: {{ .Values.vote.securityContext.allowPrivilegeEscalation }}
+          readOnlyRootFilesystem: {{ .Values.vote.securityContext.readOnlyRootFilesystem }}
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir: {}
+{{- end }}

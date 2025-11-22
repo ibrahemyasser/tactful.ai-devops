@@ -1,0 +1,59 @@
+# Redis default values
+# This wraps the Bitnami Redis chart with custom configuration
+
+redis:
+  enabled: true
+  
+  # Override service name to simplify DNS
+  fullnameOverride: "redis"
+  
+  # Architecture: standalone or replication
+  architecture: standalone
+  
+  # Authentication
+  auth:
+    enabled: false  # Voting app doesn't use Redis auth
+  
+  # Master configuration
+  master:
+    # Persistence
+    persistence:
+      enabled: true
+      size: 2Gi
+      storageClass: "ebs-gp3"
+      accessModes:
+        - ReadWriteOnce
+    
+    # Resources
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 200m
+    
+    # Security context
+    podSecurityContext:
+      enabled: true
+      fsGroup: 1001
+    
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 1001
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+  
+  # Network Policy
+  networkPolicy:
+    enabled: true
+    allowExternal: false
+  
+  # Metrics (optional)
+  metrics:
+    enabled: false
+    serviceMonitor:
+      enabled: false

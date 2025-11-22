@@ -1,0 +1,4 @@
+namespace: voting-prod
+
+secretStore:
+  region: us-east-1

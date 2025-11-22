@@ -1,0 +1,15 @@
+{{- if .Values.result.enabled }}
+# Result Service Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: result-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: result
+    {{ include "vote-app.labels" . | nindent 4 }}
+data:
+  PORT: {{ .Values.result.config.port | quote }}
+  POSTGRES_HOST: {{ .Values.result.config.postgresHost | quote }}
+  POSTGRES_PORT: {{ .Values.result.config.postgresPort | quote }}
+{{- end }}

@@ -1,0 +1,16 @@
+{{- if .Values.vote.enabled}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vote-config
+  namespace: {{ .Values.global.namespace}}
+  labels:
+    app: vote
+    {{ include "vote-app.labels" . | nindent 4 }}
+
+data:
+  REDIS_HOST: {{ .Values.vote.config.redisHost | quote}}
+  REDIS_PORT: {{ .Values.vote.config.redisPort | quote }}
+  OPTION_A: {{ .Values.vote.config.optionA | quote | default "Cats" }}
+  OPTION_B: {{ .Values.vote.config.optionB | quote | default "Dogs" }}
+{{- end }}

@@ -1,0 +1,19 @@
+{{- if .Values.result.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: result
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: result
+    {{- include "voting-app.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.result.service.type }}
+  ports:
+  - port: {{ .Values.result.service.port }}
+    targetPort: {{ .Values.result.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    app: result
+{{- end }}

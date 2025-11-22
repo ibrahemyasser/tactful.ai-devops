@@ -1,0 +1,39 @@
+# Redis production environment overrides
+
+redis:
+  architecture: replication  # HA mode with replica
+  
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "ebs-gp3"
+    
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+  
+  # Replica configuration for HA
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 10Gi
+    
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+  
+  # Enable metrics for production monitoring
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true

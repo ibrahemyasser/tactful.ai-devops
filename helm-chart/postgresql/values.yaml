@@ -1,0 +1,78 @@
+# PostgreSQL default values
+# This wraps the Bitnami PostgreSQL chart with custom configuration
+
+# Enable/disable PostgreSQL deployment
+postgresql:
+  enabled: true
+  
+  # Override service name to simplify DNS
+  fullnameOverride: "postgresql"
+  
+  # Authentication configuration
+  # Credentials will be managed by External Secrets Operator
+  auth:
+    username: postgres
+    database: votes
+    existingSecret: "postgresql-credentials"
+    secretKeys:
+      adminPasswordKey: "password"
+      userPasswordKey: "password"
+  
+  # Primary PostgreSQL configuration
+  primary:
+    # Persistence configuration
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "ebs-gp3"
+      accessModes:
+        - ReadWriteOnce
+    
+    # Resource limits
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 250m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+    
+    # Pod security context
+    podSecurityContext:
+      enabled: true
+      fsGroup: 999
+    
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 999
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+    
+    # PostgreSQL configuration
+    extendedConfiguration: |
+      max_connections = 100
+      shared_buffers = 128MB
+      effective_cache_size = 512MB
+      maintenance_work_mem = 64MB
+      checkpoint_completion_target = 0.9
+      wal_buffers = 4MB
+      default_statistics_target = 100
+      random_page_cost = 1.1
+      effective_io_concurrency = 200
+      work_mem = 2MB
+      min_wal_size = 1GB
+      max_wal_size = 4GB
+  
+  # Network Policy
+  networkPolicy:
+    enabled: true
+    allowExternal: false
+    
+  # Metrics (optional - can be enabled for monitoring)
+  metrics:
+    enabled: false
+    serviceMonitor:
+      enabled: false

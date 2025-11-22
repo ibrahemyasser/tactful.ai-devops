@@ -1,0 +1,16 @@
+apiVersion: v2
+name: postgresql
+description: PostgreSQL database wrapper chart using Bitnami PostgreSQL
+type: application
+version: 1.0.0
+appVersion: "16.0"
+
+dependencies:
+  - name: postgresql
+    version: "14.3.3"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+
+maintainers:
+  - name: Ibrahim Yasser
+    email: ibrahim.yasser1027@gmail.com

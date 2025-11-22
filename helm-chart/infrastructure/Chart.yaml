@@ -1,0 +1,6 @@
+apiVersion: v2
+name: infrastructure
+description: Infrastructure components for voting app (SecretStore, ServiceAccount)
+type: application
+version: 1.0.0
+appVersion: "1.0"

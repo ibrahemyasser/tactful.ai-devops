@@ -1,0 +1,25 @@
+# PostgreSQL development environment overrides
+
+postgresql:
+  auth:
+    existingSecret: "postgresql-credentials"
+  
+  primary:
+    persistence:
+      size: 5Gi
+      storageClass: "ebs-gp3"
+    
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+    
+    # Lower configuration for dev
+    extendedConfiguration: |
+      max_connections = 50
+      shared_buffers = 64MB
+      effective_cache_size = 256MB
+      work_mem = 1MB

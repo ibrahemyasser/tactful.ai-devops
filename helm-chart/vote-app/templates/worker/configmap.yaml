@@ -1,0 +1,15 @@
+{{- if .Values.worker.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-config
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: worker
+    {{ include "vote-app.labels" . | nindent 4 }}
+data:
+  REDIS_HOST: {{ .Values.worker.config.redisHost | quote }}
+  REDIS_PORT: {{ .Values.worker.config.redisPort | quote }}
+  POSTGRES_HOST: {{ .Values.worker.config.postgresHost | quote }}
+  POSTGRES_PORT: {{ .Values.worker.config.postgresPort | quote }}
+{{- end }}

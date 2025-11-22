@@ -1,0 +1,54 @@
+# Production environment overrides
+# Use: helm install -f values.yaml -f values-prod.yaml
+
+global:
+  namespace: voting-prod
+
+# Production ingress with HTTPS/SSL
+ingress:
+  annotations:
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS-1-2-2017-01
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERT_ID
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+
+vote:
+  replicaCount: 3  # High availability
+  image:
+    tag: stable
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+result:
+  replicaCount: 2  # High availability
+  image:
+    tag: stable
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 200m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+worker:
+  replicaCount: 2
+  image:
+    tag: stable
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 200m
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+
+# PostgreSQL - ExternalSecret will reference prod secret
+externalSecrets:
+  postgresql:
+    remoteSecretName: voting/prod/postgresql

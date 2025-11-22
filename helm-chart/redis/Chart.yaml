@@ -1,0 +1,16 @@
+apiVersion: v2
+name: redis
+description: Redis cache wrapper chart using Bitnami Redis
+type: application
+version: 1.0.0
+appVersion: "7.2"
+
+dependencies:
+  - name: redis
+    version: "19.0.2"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+
+maintainers:
+  - name: Ibrahim Yasser
+    email: ibrahim.yasser1027@gmail.com
