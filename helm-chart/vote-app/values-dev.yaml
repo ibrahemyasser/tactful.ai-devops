@@ -5,7 +5,7 @@ global:
   namespace: voting-dev
 
 vote:
-  replicaCount: 2
+  replicaCount: 3
   image:
     tag: latest
   resources:
