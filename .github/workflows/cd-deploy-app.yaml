@@ -69,30 +69,81 @@ jobs:
       - uses: azure/setup-helm@v4
       - id: tag
         run: |
+          # Helper function to get the SHA tag that 'latest' points to
+          get_latest_sha() {
+            local image=$1
+            # Get the digest of 'latest' tag
+            local latest_digest=$(docker manifest inspect ibrahim1025/${image}:latest 2>/dev/null | jq -r '.manifests[0].digest' || echo "")
+            
+            if [ -z "$latest_digest" ]; then
+              echo "latest" 
+              return
+            fi
+            
+            # Find which sha- tag has the same digest
+            local sha_tag=$(curl -s "https://hub.docker.com/v2/repositories/ibrahim1025/${image}/tags?page_size=50" | \
+              jq -r ".results[] | select(.name | startswith(\"sha-\")) | select(.digest == \"$latest_digest\") | .name" | head -1)
+            
+            if [ -n "$sha_tag" ]; then
+              echo "$sha_tag"
+            else
+              echo "latest"  # fallback
+            fi
+          }
+          
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "value=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+            # Manual: use specified tag for all services
+            echo "vote=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+            echo "result=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+            echo "worker=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # Get SHA from triggering workflow
+            # Auto: Get SHA from triggering workflow
             SHORT_SHA=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
-            echo "value=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            
+            # Check which services changed - if new image exists, use it; otherwise get latest SHA tag
+            if docker manifest inspect ibrahim1025/vote:sha-${SHORT_SHA} &>/dev/null; then
+              VOTE_TAG="sha-${SHORT_SHA}"
+            else
+              VOTE_TAG=$(get_latest_sha "vote")
+            fi
+            
+            if docker manifest inspect ibrahim1025/result:sha-${SHORT_SHA} &>/dev/null; then
+              RESULT_TAG="sha-${SHORT_SHA}"
+            else
+              RESULT_TAG=$(get_latest_sha "result")
+            fi
+            
+            if docker manifest inspect ibrahim1025/worker:sha-${SHORT_SHA} &>/dev/null; then
+              WORKER_TAG="sha-${SHORT_SHA}"
+            else
+              WORKER_TAG=$(get_latest_sha "worker")
+            fi
+            
+            echo "vote=$VOTE_TAG" >> $GITHUB_OUTPUT
+            echo "result=$RESULT_TAG" >> $GITHUB_OUTPUT
+            echo "worker=$WORKER_TAG" >> $GITHUB_OUTPUT
           else
-            # Use short SHA (first 7 characters) to match Docker image tags
-            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-            echo "value=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            # Fallback: fetch SHA tags from Docker Hub for 'latest'
+            echo "vote=$(get_latest_sha \"vote\")" >> $GITHUB_OUTPUT
+            echo "result=$(get_latest_sha \"result\")" >> $GITHUB_OUTPUT
+            echo "worker=$(get_latest_sha \"worker\")" >> $GITHUB_OUTPUT
           fi
       - run: |
           helm upgrade --install voting-app helm-chart/vote-app -n voting-dev \
             -f helm-chart/vote-app/values.yaml -f helm-chart/vote-app/values-dev.yaml \
-            --set vote.image.tag=${{ steps.tag.outputs.value }} \
-            --set result.image.tag=${{ steps.tag.outputs.value }} \
-            --set worker.image.tag=${{ steps.tag.outputs.value }} \
+            --set vote.image.tag=${{ steps.tag.outputs.vote }} \
+            --set result.image.tag=${{ steps.tag.outputs.result }} \
+            --set worker.image.tag=${{ steps.tag.outputs.worker }} \
             --wait --timeout 10m
       - run: kubectl wait --for=condition=available -n voting-dev deployment/vote deployment/result deployment/worker --timeout=5m
       
       - run: |
           echo "### ✅ Dev Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image Tag:** \`${{ steps.tag.outputs.value }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Vote: \`${{ steps.tag.outputs.vote }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Result: \`${{ steps.tag.outputs.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Worker: \`${{ steps.tag.outputs.worker }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Vote URL:** \`kubectl get ingress vote-ingress -n voting-dev\`" >> $GITHUB_STEP_SUMMARY
           echo "**Result URL:** \`kubectl get ingress result-ingress -n voting-dev\`" >> $GITHUB_STEP_SUMMARY
