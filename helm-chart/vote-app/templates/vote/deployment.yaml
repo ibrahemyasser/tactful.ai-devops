@@ -9,6 +9,11 @@ metadata:
     {{ include "vote-app.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.vote.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.vote.strategy.maxUnavailable }}
+      maxSurge: {{ .Values.vote.strategy.maxSurge }}
   selector:
     matchLabels:
       app: vote
@@ -19,6 +24,13 @@ spec:
         {{ include "vote-app.selectorLabels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ include "vote-app.serviceAccountName" . }}
+      topologySpreadConstraints:
+      - maxSkew: {{ .Values.vote.topologySpread.maxSkew }}
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: {{ .Values.vote.topologySpread.whenUnsatisfiable }}
+        labelSelector:
+          matchLabels:
+            app: vote
       securityContext:
         runAsNonRoot: {{ .Values.vote.securityContext.runAsNonRoot }}
         runAsUser: {{ .Values.vote.securityContext.runAsUser }}

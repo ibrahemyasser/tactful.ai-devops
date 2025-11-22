@@ -67,7 +67,14 @@ vote:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
+  strategy:
+    maxUnavailable: 0
+    maxSurge: 1
   
+  topologySpread:
+    maxSkew: 1
+    whenUnsatisfiable: ScheduleAnyway
+
   ingress:
     enabled: true
     className: alb
@@ -140,6 +147,14 @@ result:
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
   
+  strategy:
+    maxUnavailable: 0
+    maxSurge: 1
+  
+  topologySpread:
+    maxSkew: 1
+    whenUnsatisfiable: ScheduleAnyway
+  
   ingress:
     enabled: true
     className: alb
@@ -189,6 +204,14 @@ worker:
     maxReplicas: 3
     targetCPUUtilizationPercentage: 80
     targetMemoryUtilizationPercentage: 80
+  
+  strategy:
+    maxUnavailable: 0
+    maxSurge: 1
+  
+  topologySpread:
+    maxSkew: 1
+    whenUnsatisfiable: ScheduleAnyway
 
 # PostgreSQL connection configuration
 # Credentials will come from External Secrets
