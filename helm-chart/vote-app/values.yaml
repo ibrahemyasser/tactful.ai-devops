@@ -87,6 +87,13 @@ vote:
     fsGroup: 1000
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: false
+  
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
 
 # Result service configuration
 result:
@@ -139,6 +146,13 @@ result:
     fsGroup: 1000
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: false
+  
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
 
 # Worker service configuration
 worker:
@@ -169,6 +183,13 @@ worker:
     fsGroup: 1000
     allowPrivilegeEscalation: false
     readOnlyRootFilesystem: false
+  
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
 
 # PostgreSQL connection configuration
 # Credentials will come from External Secrets
