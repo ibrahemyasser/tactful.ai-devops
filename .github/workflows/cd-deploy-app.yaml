@@ -31,9 +31,16 @@ jobs:
       - run: aws eks update-kubeconfig --name tactful-voting-dev --region ${{ vars.AWS_REGION }}
       - uses: azure/setup-helm@v4
       - id: tag
-        run: echo "value=${{ github.event_name == 'workflow_dispatch' && inputs.image_tag || format('sha-{0}', github.sha) }}" >> $GITHUB_OUTPUT
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "value=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          else
+            # Use short SHA (first 7 characters) to match Docker image tags
+            SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+            echo "value=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          fi
       - run: |
-          helm upgrade --install voting-app helm-chart/vote-app -n voting-dev --create-namespace \
+          helm upgrade --install voting-app helm-chart/vote-app -n voting-dev \
             -f helm-chart/vote-app/values.yaml -f helm-chart/vote-app/values-dev.yaml \
             --set vote.image.tag=${{ steps.tag.outputs.value }} \
             --set result.image.tag=${{ steps.tag.outputs.value }} \
@@ -53,6 +60,8 @@ jobs:
           aws-region: ${{ vars.AWS_REGION }}
 
       # Prod: Deploy via SSM
+      - id: prod-tag
+        run: echo "value=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
       - run: |
           INSTANCE_ID=${{ secrets.PROD_SSM_INSTANCE_ID }}
           
@@ -66,7 +75,7 @@ jobs:
             --parameters commands="[
               'aws eks update-kubeconfig --name tactful-voting-prod --region ${{ vars.AWS_REGION }}',
               'aws s3 cp s3://tactful-voting-artifacts-${{ vars.AWS_REGION }}/helm-chart/vote-app/ /tmp/vote-app/ --recursive',
-              'helm upgrade --install voting-app /tmp/vote-app -n voting-prod --create-namespace -f /tmp/vote-app/values.yaml -f /tmp/vote-app/values-prod.yaml --set vote.image.tag=${{ inputs.image_tag }} --set result.image.tag=${{ inputs.image_tag }} --set worker.image.tag=${{ inputs.image_tag }} --wait --timeout 15m',
+              'helm upgrade --install voting-app /tmp/vote-app -n voting-prod -f /tmp/vote-app/values.yaml -f /tmp/vote-app/values-prod.yaml --set vote.image.tag=${{ steps.prod-tag.outputs.value }} --set result.image.tag=${{ steps.prod-tag.outputs.value }} --set worker.image.tag=${{ steps.prod-tag.outputs.value }} --wait --timeout 15m',
               'kubectl wait --for=condition=available -n voting-prod deployment/vote deployment/result deployment/worker --timeout=10m || helm rollback voting-app -n voting-prod'
             ]" \
             --output text --query "Command.CommandId")
