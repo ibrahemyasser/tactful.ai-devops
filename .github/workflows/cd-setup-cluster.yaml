@@ -67,7 +67,10 @@ jobs:
             -f helm-chart/infrastructure/values-dev.yaml \
             --wait
           
-          # Install data stores
+          # Build dependencies and install data stores
+          helm dependency build helm-chart/postgresql
+          helm dependency build helm-chart/redis
+          
           helm upgrade --install postgresql helm-chart/postgresql -n voting-dev -f helm-chart/postgresql/values.yaml -f helm-chart/postgresql/values-dev.yaml --wait --timeout 10m
           helm upgrade --install redis helm-chart/redis -n voting-dev -f helm-chart/redis/values.yaml -f helm-chart/redis/values-dev.yaml --wait --timeout 10m
 
@@ -115,7 +118,10 @@ jobs:
             -f /tmp/helm-chart/infrastructure/values-prod.yaml \
             --wait
           
-          # Install data stores
+          # Build dependencies and install data stores
+          helm dependency build /tmp/helm-chart/postgresql
+          helm dependency build /tmp/helm-chart/redis
+          
           helm upgrade --install postgresql /tmp/helm-chart/postgresql -n voting-prod -f /tmp/helm-chart/postgresql/values.yaml -f /tmp/helm-chart/postgresql/values-prod.yaml --wait --timeout 10m
           helm upgrade --install redis /tmp/helm-chart/redis -n voting-prod -f /tmp/helm-chart/redis/values.yaml -f /tmp/helm-chart/redis/values-prod.yaml --wait --timeout 10m
           
