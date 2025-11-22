@@ -2,7 +2,7 @@
 
 postgresql:
   image:
-    tag: "16.3.0-debian-12-r14"
+    tag: "16-alpine"
   
   auth:
     existingSecret: "postgresql-credentials"
