@@ -7,7 +7,7 @@ appVersion: "7.2"
 
 dependencies:
   - name: redis
-    version: "20.7.0"
+    version: "23.2.11"
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
 
