@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Values.global.namespace }}
   labels:
     app: result
-    {{- include "voting-app.labels" . | nindent 4 }}
+    {{- include "vote-app.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.result.service.type }}
   ports:
