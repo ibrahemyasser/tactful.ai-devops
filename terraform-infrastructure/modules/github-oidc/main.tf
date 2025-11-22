@@ -23,7 +23,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -59,7 +59,7 @@ resource "aws_iam_role" "github_actions" {
   }
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -102,7 +102,14 @@ resource "aws_iam_role_policy" "iam_permissions" {
           "iam:UntagPolicy",
           "iam:GetOpenIDConnectProvider",
           "iam:GetPolicyVersion",
-          "iam:PassRole"
+          "iam:PassRole",
+          "iam:ListInstanceProfilesForRole",
+          "iam:CreateInstanceProfile",
+          "iam:DeleteInstanceProfile",
+          "iam:GetInstanceProfile",
+          "iam:AddRoleToInstanceProfile",
+          "iam:RemoveRoleFromInstanceProfile",
+          "iam:ListInstanceProfiles"
         ]
         Resource = "*"
       }

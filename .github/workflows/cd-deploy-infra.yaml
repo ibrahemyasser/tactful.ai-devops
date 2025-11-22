@@ -40,10 +40,73 @@ permissions:
   contents: read
 
 jobs:
+  cleanup-cluster:
+    name: Cleanup Cluster Resources
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    if: inputs.action == 'destroy' && (inputs.component == 'all' || inputs.component == 'eks-cluster')
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name tactful-voting-${{ inputs.environment }} \
+            --region ${{ vars.AWS_REGION }}
+
+      - name: Delete Helm releases and Ingresses
+        run: |
+          echo "🗑️  Deleting Helm releases to remove Ingresses and trigger ALB cleanup..."
+          
+          # Delete app Helm release (contains Ingresses)
+          helm list -n voting-${{ inputs.environment }} -q | xargs -r helm uninstall -n voting-${{ inputs.environment }} --wait || true
+          
+          # Delete any remaining infrastructure Helm releases
+          helm list -n external-secrets -q | xargs -r helm uninstall -n external-secrets --wait || true
+          helm list -n aws-load-balancer-controller -q | xargs -r helm uninstall -n aws-load-balancer-controller --wait || true
+          
+          echo "⏳ Waiting for ALBs to be deleted (60 seconds)..."
+          sleep 60
+          
+          # Force delete any remaining Ingress resources
+          echo "🔍 Force deleting any remaining Ingress resources..."
+          kubectl get ingress -A -o json | \
+            jq -r '.items[] | "\(.metadata.namespace) \(.metadata.name)"' | \
+            while read -r ns name; do
+              echo "   Deleting ingress $name in namespace $ns"
+              kubectl delete ingress "$name" -n "$ns" --wait=false --timeout=10s || true
+            done
+          
+          # Delete LoadBalancer services
+          echo "🔍 Deleting LoadBalancer services..."
+          kubectl get svc -A -o json | \
+            jq -r '.items[] | select(.spec.type=="LoadBalancer") | "\(.metadata.namespace) \(.metadata.name)"' | \
+            while read -r ns name; do
+              echo "   Deleting service $name in namespace $ns"
+              kubectl delete svc "$name" -n "$ns" --wait=false --timeout=10s || true
+            done
+          
+          echo "✅ Cluster cleanup initiated"
+
   terraform-deploy:
     name: ${{ inputs.action }} - ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    needs: [cleanup-cluster]
+    if: always() && (needs.cleanup-cluster.result == 'success' || needs.cleanup-cluster.result == 'skipped')
     outputs:
       eks_applied: ${{ steps.check.outputs.eks_applied }}
     
