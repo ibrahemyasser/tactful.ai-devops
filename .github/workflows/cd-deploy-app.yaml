@@ -9,19 +9,56 @@ on:
       image_tag:
         type: string
         default: 'latest'
-  push:
+  workflow_run:
+    workflows: ["CI - Build and Push Docker Images"]
+    types: [completed]
     branches: [main]
-    paths: ['vote/**', 'result/**', 'worker/**', 'helm-chart/vote-app/**']
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  check-cluster-ready:
+    runs-on: ubuntu-latest
+    # Only run if: manual trigger OR workflow_run succeeded
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+    environment: dev
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      
+      - name: Check if namespace exists
+        id: check
+        run: |
+          aws eks update-kubeconfig --name tactful-voting-dev --region ${{ vars.AWS_REGION }}
+          
+          if kubectl get namespace voting-dev &>/dev/null; then
+            # Check if data stores are ready
+            if kubectl get deployment postgresql -n voting-dev &>/dev/null && \
+               kubectl get deployment redis-master -n voting-dev &>/dev/null; then
+              echo "ready=true" >> $GITHUB_OUTPUT
+              echo "✅ Cluster is ready for deployment" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "ready=false" >> $GITHUB_OUTPUT
+              echo "⚠️ Namespace exists but data stores not ready. Run 'CD - Setup EKS Cluster' first" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "ready=false" >> $GITHUB_OUTPUT
+            echo "❌ Namespace voting-dev not found. Run 'CD - Setup EKS Cluster' first" >> $GITHUB_STEP_SUMMARY
+          fi
+
   deploy-dev:
+    needs: check-cluster-ready
+    if: needs.check-cluster-ready.outputs.ready == 'true'
     runs-on: ubuntu-latest
     environment: dev
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'dev')
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -34,6 +71,10 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "value=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # Get SHA from triggering workflow
+            SHORT_SHA=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
+            echo "value=sha-${SHORT_SHA}" >> $GITHUB_OUTPUT
           else
             # Use short SHA (first 7 characters) to match Docker image tags
             SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
@@ -47,6 +88,14 @@ jobs:
             --set worker.image.tag=${{ steps.tag.outputs.value }} \
             --wait --timeout 10m
       - run: kubectl wait --for=condition=available -n voting-dev deployment/vote deployment/result deployment/worker --timeout=5m
+      
+      - run: |
+          echo "### ✅ Dev Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tag:** \`${{ steps.tag.outputs.value }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Vote URL:** \`kubectl get ingress vote-ingress -n voting-dev\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Result URL:** \`kubectl get ingress result-ingress -n voting-dev\`" >> $GITHUB_STEP_SUMMARY
 
   deploy-prod:
     runs-on: ubuntu-latest

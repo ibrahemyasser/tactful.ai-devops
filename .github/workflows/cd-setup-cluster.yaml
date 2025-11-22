@@ -6,6 +6,11 @@ on:
       environment:
         type: choice
         options: [dev, prod]
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
 
 permissions:
   id-token: write
@@ -15,6 +20,8 @@ jobs:
   setup:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    outputs:
+      namespace_ready: ${{ steps.verify.outputs.namespace_ready }}
     steps:
       - uses: actions/checkout@v4
       - uses: aws-actions/configure-aws-credentials@v4
@@ -73,6 +80,8 @@ jobs:
           
           helm upgrade --install postgresql helm-chart/postgresql -n voting-dev -f helm-chart/postgresql/values.yaml -f helm-chart/postgresql/values-dev.yaml --wait --timeout 10m
           helm upgrade --install redis helm-chart/redis -n voting-dev -f helm-chart/redis/values.yaml -f helm-chart/redis/values-dev.yaml --wait --timeout 10m
+          
+          echo "✅ Dev cluster setup complete" >> $GITHUB_STEP_SUMMARY
 
       # Prod: Use SSM to execute commands on bastion/worker instance
       - if: inputs.environment == 'prod'
@@ -147,3 +156,41 @@ jobs:
           
           # Get output
           aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query "StandardOutputContent" --output text
+          
+          echo "✅ Prod cluster setup complete" >> $GITHUB_STEP_SUMMARY
+
+      # Verify namespace is ready
+      - name: Verify Setup
+        id: verify
+        run: |
+          if [ "${{ inputs.environment }}" = "dev" ]; then
+            aws eks update-kubeconfig --name tactful-voting-dev --region ${{ vars.AWS_REGION }}
+            NAMESPACE="voting-dev"
+          else
+            # For prod, we need to check via SSM
+            echo "namespace_ready=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Check if namespace exists and has resources
+          if kubectl get namespace $NAMESPACE &>/dev/null; then
+            echo "✅ Namespace $NAMESPACE exists" >> $GITHUB_STEP_SUMMARY
+            
+            # Check if ClusterSecretStore is ready
+            if kubectl get clustersecretstore aws-secretsmanager &>/dev/null; then
+              STATUS=$(kubectl get clustersecretstore aws-secretsmanager -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}')
+              if [ "$STATUS" = "True" ]; then
+                echo "✅ ClusterSecretStore is ready" >> $GITHUB_STEP_SUMMARY
+                echo "namespace_ready=true" >> $GITHUB_OUTPUT
+              else
+                echo "⚠️ ClusterSecretStore not ready" >> $GITHUB_STEP_SUMMARY
+                echo "namespace_ready=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "⚠️ ClusterSecretStore not found" >> $GITHUB_STEP_SUMMARY
+              echo "namespace_ready=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "❌ Namespace $NAMESPACE not found" >> $GITHUB_STEP_SUMMARY
+            echo "namespace_ready=false" >> $GITHUB_OUTPUT
+          fi

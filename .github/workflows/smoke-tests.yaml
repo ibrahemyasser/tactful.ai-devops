@@ -32,9 +32,10 @@ jobs:
         id: url-dev
         run: |
           aws eks update-kubeconfig --name tactful-voting-dev --region ${{ vars.AWS_REGION }}
-          ALB=$(kubectl get ingress voting-app-ingress -n voting-dev -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          echo "vote=http://$ALB/vote" >> $GITHUB_OUTPUT
-          echo "result=http://$ALB/result" >> $GITHUB_OUTPUT
+          VOTE_ALB=$(kubectl get ingress vote-ingress -n voting-dev -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          RESULT_ALB=$(kubectl get ingress result-ingress -n voting-dev -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          echo "vote=http://$VOTE_ALB" >> $GITHUB_OUTPUT
+          echo "result=http://$RESULT_ALB" >> $GITHUB_OUTPUT
 
       # Prod: Get ALB via SSM
       - if: inputs.environment == 'prod'
@@ -47,15 +48,18 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --parameters commands="[
               'aws eks update-kubeconfig --name tactful-voting-prod --region ${{ vars.AWS_REGION }}',
-              'kubectl get ingress voting-app-ingress -n voting-prod -o jsonpath={.status.loadBalancer.ingress[0].hostname}'
+              'echo VOTE_ALB=$(kubectl get ingress vote-ingress -n voting-prod -o jsonpath={.status.loadBalancer.ingress[0].hostname})',
+              'echo RESULT_ALB=$(kubectl get ingress result-ingress -n voting-prod -o jsonpath={.status.loadBalancer.ingress[0].hostname})'
             ]" \
             --output text --query "Command.CommandId")
           
           aws ssm wait command-executed --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID"
-          ALB=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query "StandardOutputContent" --output text | tail -1)
+          OUTPUT=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query "StandardOutputContent" --output text)
+          VOTE_ALB=$(echo "$OUTPUT" | grep VOTE_ALB | cut -d= -f2)
+          RESULT_ALB=$(echo "$OUTPUT" | grep RESULT_ALB | cut -d= -f2)
           
-          echo "vote=https://$ALB/vote" >> $GITHUB_OUTPUT
-          echo "result=https://$ALB/result" >> $GITHUB_OUTPUT
+          echo "vote=https://$VOTE_ALB" >> $GITHUB_OUTPUT
+          echo "result=https://$RESULT_ALB" >> $GITHUB_OUTPUT
 
       - id: url
         run: |
