@@ -55,7 +55,12 @@ jobs:
           
           # Install cluster-level components
           helm upgrade --install external-secrets external-secrets/external-secrets -n external-secrets-system --create-namespace --wait
-          helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=tactful-voting-dev --wait
+          helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
+            -n kube-system \
+            --set clusterName=tactful-voting-dev \
+            --set region=${{ vars.AWS_REGION }} \
+            --set vpcId=$(aws eks describe-cluster --name tactful-voting-dev --query 'cluster.resourcesVpcConfig.vpcId' --output text) \
+            --wait
           
           # Install infrastructure (namespace, ServiceAccount, SecretStore)
           helm upgrade --install infrastructure helm-chart/infrastructure \
@@ -103,7 +108,7 @@ jobs:
           
           # Install cluster-level components
           helm upgrade --install external-secrets external-secrets/external-secrets -n external-secrets-system --create-namespace --wait
-          helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=tactful-voting-prod --wait
+          helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=tactful-voting-prod --set region=${{ vars.AWS_REGION }} --set vpcId=\$(aws eks describe-cluster --name tactful-voting-prod --query 'cluster.resourcesVpcConfig.vpcId' --output text) --wait
           
           # Install infrastructure (namespace, ServiceAccount, SecretStore)
           helm upgrade --install infrastructure /tmp/helm-chart/infrastructure \
