@@ -59,7 +59,8 @@ resource "aws_iam_policy" "external_secrets_policy" {
         Effect = "Allow"
         Action = [
           "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret"
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:ListSecrets"
         ]
         Resource = [
           aws_secretsmanager_secret.postgresql.arn
