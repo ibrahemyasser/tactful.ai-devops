@@ -1,9 +1,6 @@
 # PostgreSQL development environment overrides
 
 postgresql:
-  image:
-    tag: "16.6.0-debian-12-r0"
-  
   auth:
     existingSecret: "postgresql-credentials"
   
