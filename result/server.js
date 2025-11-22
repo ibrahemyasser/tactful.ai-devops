@@ -54,7 +54,7 @@ function getVotes(client) {
       io.sockets.emit("scores", JSON.stringify(votes));
     }
 
-    setTimeout(function() {getVotes(client) }, 1000);
+    setTimeout(function() {getVotes(client) }, 500);  // Poll faster (500ms instead of 1000ms)
   });
 }
 

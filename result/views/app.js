@@ -31,8 +31,12 @@ app.controller('statsCtrl', function($scope){
     document.body.style.opacity=1;
     updateScores();
   };
+  
+  // Start immediately instead of waiting for message
+  init();
+  
   socket.on('message',function(data){
-    init();
+    // Message received, already initialized
   });
 });
 
