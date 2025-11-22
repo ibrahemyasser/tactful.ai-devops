@@ -176,6 +176,10 @@ resource "aws_cloudwatch_log_group" "flow_logs" {
   retention_in_days = var.flow_logs_retention_days
 
   tags = var.tags
+
+  lifecycle {
+    ignore_changes = [name]
+  }
 }
 
 resource "aws_iam_role" "flow_logs" {
