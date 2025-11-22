@@ -39,6 +39,7 @@ namespace Worker
                     // Slow down to prevent CPU spike, only query each 100ms
                     Thread.Sleep(100);
 
+
                     // Reconnect redis if down
                     if (redisConn == null || !redisConn.IsConnected) {
                         Console.WriteLine("Reconnecting Redis");
