@@ -41,8 +41,8 @@ jobs:
           
           if kubectl get namespace voting-dev &>/dev/null; then
             # Check if data stores are ready
-            if kubectl get deployment postgresql -n voting-dev &>/dev/null && \
-               kubectl get deployment redis-master -n voting-dev &>/dev/null; then
+            if kubectl get statefulset postgresql -n voting-dev &>/dev/null && \
+               kubectl get statefulset redis-master -n voting-dev &>/dev/null; then
               echo "ready=true" >> $GITHUB_OUTPUT
               echo "✅ Cluster is ready for deployment" >> $GITHUB_STEP_SUMMARY
             else
