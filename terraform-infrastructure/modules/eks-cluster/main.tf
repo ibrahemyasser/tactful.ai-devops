@@ -170,10 +170,10 @@ data "aws_eks_addon_version" "ebs_csi" {
 resource "aws_eks_node_group" "main" {
   for_each = var.node_groups
 
-  cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.cluster_name}-${each.key}"
-  node_role_arn   = aws_iam_role.node_group.arn
-  subnet_ids      = var.private_subnet_ids
+  cluster_name         = aws_eks_cluster.main.name
+  node_group_name_prefix = "${var.cluster_name}-${each.key}-"
+  node_role_arn        = aws_iam_role.node_group.arn
+  subnet_ids           = var.private_subnet_ids
 
   instance_types = each.value.instance_types
   capacity_type  = lookup(each.value, "capacity_type", "ON_DEMAND")

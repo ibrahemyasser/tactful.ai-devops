@@ -50,7 +50,7 @@ inputs = {
   
   # Enable all control plane logs for dev
   cluster_log_types  = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
-  log_retention_days = 7
+  log_retention_days = 7  
   
   # Node groups configuration
   node_groups = {
