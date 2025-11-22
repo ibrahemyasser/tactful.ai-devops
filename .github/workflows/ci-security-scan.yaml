@@ -1,0 +1,46 @@
+name: CI - Security Scan (Scheduled)
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily scan for newly published CVEs
+  workflow_dispatch:
+
+jobs:
+  # Scan all services on schedule
+  scan:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [vote, result, worker]
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: docker build -t ${{ matrix.service }}-scan:latest ./${{ matrix.service }}
+
+      - uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ matrix.service }}-scan:latest'
+          format: 'sarif'
+          output: 'trivy-${{ matrix.service }}.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+          ignore-unfixed: true
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-${{ matrix.service }}.sarif'
+          category: '${{ matrix.service }}-image'
+
+      - uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: '${{ matrix.service }}-scan:latest'
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+
+      - if: always()
+        run: echo "**${{ matrix.service }}**: ${{ job.status == 'success' && 'No vulnerabilities' || 'Vulnerabilities found' }}" >> $GITHUB_STEP_SUMMARY
