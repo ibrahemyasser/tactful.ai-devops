@@ -13,6 +13,13 @@ on:
     workflows: ["CI - Build and Push Docker Images"]
     types: [completed]
     branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'helm-chart/vote-app/**'
+      - 'helm-chart/infrastructure/**'
+      - 'helm-chart/postgresql/**'
+      - 'helm-chart/redis/**'
 
 permissions:
   id-token: write
@@ -21,9 +28,10 @@ permissions:
 jobs:
   check-cluster-ready:
     runs-on: ubuntu-latest
-    # Only run if: manual trigger OR workflow_run succeeded
+    # Only run if: manual trigger OR workflow_run succeeded OR helm chart push to main
     if: |
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     environment: dev
     outputs:
@@ -96,6 +104,11 @@ jobs:
             echo "vote=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
             echo "result=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
             echo "worker=${{ inputs.image_tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            # Helm chart change: use latest SHA tags for all services
+            echo "vote=$(get_latest_sha \"vote\")" >> $GITHUB_OUTPUT
+            echo "result=$(get_latest_sha \"result\")" >> $GITHUB_OUTPUT
+            echo "worker=$(get_latest_sha \"worker\")" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "workflow_run" ]; then
             # Auto: Get SHA from triggering workflow
             SHORT_SHA=$(echo "${{ github.event.workflow_run.head_sha }}" | cut -c1-7)
