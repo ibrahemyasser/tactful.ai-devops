@@ -19,7 +19,20 @@ jobs:
 
       - run: docker build -t ${{ matrix.service }}-scan:latest ./${{ matrix.service }}
 
-      - uses: aquasecurity/trivy-action@master
+      # Scan and display all vulnerabilities (informational)
+      - name: Scan for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          image-ref: '${{ matrix.service }}-scan:latest'
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+          ignore-unfixed: true
+          exit-code: '0'
+
+      # Generate SARIF report for GitHub Security tab (only fail on CRITICAL/HIGH)
+      - name: Generate SARIF report
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: '${{ matrix.service }}-scan:latest'
           format: 'sarif'
@@ -33,14 +46,6 @@ jobs:
         with:
           sarif_file: 'trivy-${{ matrix.service }}.sarif'
           category: '${{ matrix.service }}-image'
-
-      - uses: aquasecurity/trivy-action@master
-        if: always()
-        with:
-          image-ref: '${{ matrix.service }}-scan:latest'
-          format: 'table'
-          severity: 'CRITICAL,HIGH,MEDIUM'
-          ignore-unfixed: true
 
       - name: Summary
         if: always()
