@@ -42,5 +42,11 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'
           ignore-unfixed: true
 
-      - if: always()
-        run: echo "**${{ matrix.service }}**: ${{ job.status == 'success' && '✅ No vulnerabilities' || '❌ Vulnerabilities found' }}" >> $GITHUB_STEP_SUMMARY
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "**${{ matrix.service }}**: ✅ No vulnerabilities" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**${{ matrix.service }}**: ❌ Vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+          fi
