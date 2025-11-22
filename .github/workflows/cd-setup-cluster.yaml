@@ -53,7 +53,7 @@ jobs:
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo update
           
-          local temp_crd_file="/tmp/external-secrets-crds.yaml"
+          temp_crd_file="/tmp/external-secrets-crds.yaml"
           curl -sL https://raw.githubusercontent.com/external-secrets/external-secrets/v1.0.0/deploy/crds/bundle.yaml -o "$temp_crd_file"
           
           # Apply with server-side apply to handle large annotations
