@@ -386,3 +386,19 @@ resource "aws_eks_pod_identity_association" "external_secrets" {
 
   depends_on = [aws_eks_cluster.main]
 }
+# EKS Access Entry for local admin user
+resource "aws_eks_access_entry" "local_admin" {
+  cluster_name  = var.cluster_name
+  principal_arn = "arn:aws:iam::608713827966:user/Terraform"
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "local_admin_policy" {
+  cluster_name  = var.cluster_name
+  principal_arn = "arn:aws:iam::608713827966:user/Terraform"
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
