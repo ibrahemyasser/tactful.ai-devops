@@ -192,7 +192,7 @@ worker:
       cpu: 500m
   
   securityContext:
-    runAsNonRoot: false
+    runAsNonRoot: true
     runAsUser: 1000
     fsGroup: 1000
     allowPrivilegeEscalation: false
