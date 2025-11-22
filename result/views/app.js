@@ -27,6 +27,7 @@ app.controller('statsCtrl', function($scope){
     });
   };
 
+  
   var init = function(){
     document.body.style.opacity=1;
     updateScores();
