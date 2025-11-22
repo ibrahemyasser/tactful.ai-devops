@@ -386,6 +386,26 @@ resource "aws_eks_pod_identity_association" "external_secrets" {
 
   depends_on = [aws_eks_cluster.main]
 }
+
+# Pod Identity Association for AWS Load Balancer Controller
+# This is created here but the IAM role is managed by the secrets-manager module
+resource "aws_eks_pod_identity_association" "alb_controller" {
+  count = var.alb_controller_role_arn != "" ? 1 : 0
+
+  cluster_name    = aws_eks_cluster.main.name
+  namespace       = "kube-system"
+  service_account = "aws-load-balancer-controller"
+  role_arn        = var.alb_controller_role_arn
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.cluster_name}-alb-controller-pod-identity"
+    }
+  )
+
+  depends_on = [aws_eks_cluster.main]
+}
 # EKS Access Entry for local admin user
 resource "aws_eks_access_entry" "local_admin" {
   cluster_name  = aws_eks_cluster.main.name

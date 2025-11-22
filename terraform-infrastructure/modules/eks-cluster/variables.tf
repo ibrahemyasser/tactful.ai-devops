@@ -112,6 +112,12 @@ variable "external_secrets_role_arn" {
   default     = ""
 }
 
+variable "alb_controller_role_arn" {
+  description = "IAM role ARN for AWS Load Balancer Controller (empty to skip Pod Identity association)"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Tags to apply to all resources"
   type        = map(string)

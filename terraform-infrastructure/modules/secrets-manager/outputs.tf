@@ -18,6 +18,16 @@ output "external_secrets_policy_arn" {
   value       = aws_iam_policy.external_secrets_policy.arn
 }
 
+output "alb_controller_role_arn" {
+  description = "ARN of the IAM role for AWS Load Balancer Controller"
+  value       = aws_iam_role.alb_controller.arn
+}
+
+output "alb_controller_policy_arn" {
+  description = "ARN of the IAM policy for AWS Load Balancer Controller"
+  value       = aws_iam_policy.alb_controller.arn
+}
+
 # Output the initial password (sensitive)
 output "postgresql_initial_password" {
   description = "Initial PostgreSQL password (store securely!)"

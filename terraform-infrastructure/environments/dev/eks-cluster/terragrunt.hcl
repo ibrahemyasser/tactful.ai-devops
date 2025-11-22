@@ -29,6 +29,7 @@ dependency "secrets" {
   
   mock_outputs = {
     external_secrets_role_arn = "arn:aws:iam::123456789012:role/mock-external-secrets-role"
+    alb_controller_role_arn   = "arn:aws:iam::123456789012:role/mock-alb-controller-role"
   }
   mock_outputs_allowed_terraform_commands = ["validate", "plan"]
 }
@@ -69,4 +70,7 @@ inputs = {
   # External Secrets Operator Pod Identity (from secrets-manager module)
   # This will be empty on first apply, run secrets-manager first, then re-apply EKS
   external_secrets_role_arn = dependency.secrets.outputs.external_secrets_role_arn
+  
+  # AWS Load Balancer Controller Pod Identity (from secrets-manager module)
+  alb_controller_role_arn = dependency.secrets.outputs.alb_controller_role_arn
 }
