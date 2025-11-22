@@ -55,9 +55,9 @@ inputs = {
   # Node groups configuration
   node_groups = {
     general = {
-      instance_types = ["t3.small"]
-      min_size       = 1
-      max_size       = 3
+      instance_types = ["m7i-flex.large"]
+      min_size       = 2
+      max_size       = 4
       desired_size   = 2
       capacity_type  = "ON_DEMAND"
       disk_size      = 20
