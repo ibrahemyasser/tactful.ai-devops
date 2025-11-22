@@ -69,7 +69,7 @@ jobs:
       - name: Terraform Plan
         working-directory: terraform-infrastructure/environments/dev
         run: |
-          terragrunt run --all plan  2>&1 | tee plan.txt
+          terragrunt run --all plan --non-interactive  2>&1 | tee plan.txt
           
           if grep -q "No changes" plan.txt; then
             echo "✅ No changes" >> $GITHUB_STEP_SUMMARY
@@ -106,10 +106,11 @@ jobs:
         working-directory: terraform-infrastructure/environments/${{ inputs.environment }}
         run: |
           if [ "${{ inputs.component }}" = "all" ]; then
-            terragrunt run --all ${{ inputs.action }} 
+            terragrunt run --all ${{ inputs.action --non-interactive }}   
+
           else
             cd ${{ inputs.component }}
-            terragrunt ${{ inputs.action }}
+            terragrunt ${{ inputs.action }} --non-interactive
           fi
 
       - name: Next Steps
