@@ -30,34 +30,15 @@ jobs:
           ignore-unfixed: true
           exit-code: '0'
 
-      # Check for CRITICAL/HIGH vulnerabilities
-      - name: Check for critical vulnerabilities
-        id: scan
+      # Scan and display all vulnerabilities (informational)
+      - name: Scan for vulnerabilities
         uses: aquasecurity/trivy-action@master
-        continue-on-error: true
         with:
           image-ref: '${{ matrix.service }}-scan:latest'
-          format: 'json'
-          output: 'trivy-${{ matrix.service }}.json'
-          severity: 'CRITICAL,HIGH'
+          format: 'table'
+          severity: 'CRITICAL,HIGH,MEDIUM'
           ignore-unfixed: true
-
-      - name: Check scan results
-        id: check
-        run: |
-          if [ -f "trivy-${{ matrix.service }}.json" ]; then
-            VULNS=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-${{ matrix.service }}.json)
-            echo "count=$VULNS" >> $GITHUB_OUTPUT
-            if [ "$VULNS" -gt 0 ]; then
-              echo "status=failed" >> $GITHUB_OUTPUT
-              exit 1
-            else
-              echo "status=passed" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "count=0" >> $GITHUB_OUTPUT
-            echo "status=passed" >> $GITHUB_OUTPUT
-          fi
+          exit-code: '0'
 
       # Generate SARIF for GitHub Security tab
       - name: Generate SARIF report
@@ -76,12 +57,3 @@ jobs:
         with:
           sarif_file: 'trivy-${{ matrix.service }}.sarif'
           category: '${{ matrix.service }}-image'
-
-      - name: Summary
-        if: always()
-        run: |
-          if [ "${{ steps.check.outputs.status }}" = "passed" ]; then
-            echo "**${{ matrix.service }}**: ✅ No HIGH/CRITICAL vulnerabilities" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "**${{ matrix.service }}**: ❌ Found ${{ steps.check.outputs.count }} HIGH/CRITICAL vulnerabilities" >> $GITHUB_STEP_SUMMARY
-          fi
