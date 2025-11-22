@@ -2,3 +2,6 @@ namespace: voting-prod
 
 secretStore:
   region: us-east-1
+
+externalSecrets:
+  postgresSecretName: "voting/prod/postgresql"  # AWS Secrets Manager path

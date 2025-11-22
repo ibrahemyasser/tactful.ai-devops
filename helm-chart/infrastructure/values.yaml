@@ -3,3 +3,8 @@ namespace: voting-dev
 secretStore:
   name: aws-secrets-manager
   region: us-east-1
+
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  postgresSecretName: ""  # Set in values-dev.yaml or values-prod.yaml
