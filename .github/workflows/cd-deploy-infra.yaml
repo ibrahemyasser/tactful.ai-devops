@@ -106,7 +106,7 @@ jobs:
         working-directory: terraform-infrastructure/environments/${{ inputs.environment }}
         run: |
           if [ "${{ inputs.component }}" = "all" ]; then
-            terragrunt run --all ${{ inputs.action --non-interactive }}   
+            terragrunt run --all ${{ inputs.action }} --non-interactive    
 
           else
             cd ${{ inputs.component }}
