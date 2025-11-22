@@ -43,4 +43,4 @@ jobs:
           ignore-unfixed: true
 
       - if: always()
-        run: echo "**${{ matrix.service }}**: ${{ job.status == 'success' ? 'No vulnerabilities' : 'Vulnerabilities found' }}" >> $GITHUB_STEP_SUMMARY
+        run: echo "**${{ matrix.service }}**: ${{ job.status == 'success' && '✅ No vulnerabilities' || '❌ Vulnerabilities found' }}" >> $GITHUB_STEP_SUMMARY
